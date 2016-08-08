@@ -1,0 +1,11 @@
+* SICP Examples and Exercises in Clojure
+
+This tracks my personal adventure working my way through [[https://mitpress.mit.edu/sicp/][SICP]], and is
+based on the [[https://github.com/sarabander/sicp-pdf][sicp-pdf]] project on github.
+
+The repository will contain most of the example source code and exercise
+solutions, currently organized in one big file per chapter. There are a few
+omissions, usually indicating that I'm too dumb, tired or lazy.
+The source code sometimes deviates from the code samples in that it uses some
+features that are introduced later in the text, i.e. let expressions are used
+from the beginning, later I realized that I'm not supposed to know them yet.
