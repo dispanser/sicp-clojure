@@ -6,6 +6,17 @@ based on the [[https://github.com/sarabander/sicp-pdf][sicp-pdf]] project on git
 The repository will contain most of the example source code and exercise
 solutions, currently organized in one big file per chapter. There are a few
 omissions, usually indicating that I'm too dumb, tired or lazy.
-The source code sometimes deviates from the code samples in that it uses some
-features that are introduced later in the text, i.e. let expressions are used
-from the beginning, later I realized that I'm not supposed to know them yet.
+
+** Known Deviations
+
+- the source code sometimes deviates from the code samples in that it uses some
+  features that are introduced later in the text, i.e. let expressions are used
+  from the beginning, later I realized that I'm not supposed to know them yet.
+- many functions and definitions have a different name, as I did not intend to
+  publish anything initially
+
+** Contributions
+
+Since it's my personal attempt on working through SICP, I'm not interested in
+seeing solutions to chapters I haven't visited yet. Feel free to point to errors,
+propose improvements for already existing code, though.
