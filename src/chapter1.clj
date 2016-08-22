@@ -773,3 +773,21 @@ duration (ms) and the actual function result as a vector with two elements."
 ;; A: φ^2 = φ + 1   | --> divide both sides by φ
 ;;    φ = 1 + 1/φ
 (fixed-point (fn [x] (+ 1 (/ 1 x))) 1.0)
+
+;; exercise 1.36
+;; Q: modify fixed-point to print intermediate results, compute solution to x^x = 1000
+;; by solving fixed-point for x = log(1000) / log(x)
+;; A: using clojure's print statement instead, as display / newline are not available.
+(defn log [x] (Math/log x))
+(defn fixed-point [f first-guess]
+  (defn close-enough? [v1 v2]
+    (> tolerance
+       (Math/abs (- v1 v2))))
+  (defn try' [guess]
+    (print "guess:" guess)
+    (let [next-guess (f guess)]
+      (if (close-enough? guess next-guess)
+        next-guess
+        (recur next-guess))))
+  (try' first-guess))
+(fixed-point (fn [x] (/ (log 1000) (log x))) 2.0)
