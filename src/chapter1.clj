@@ -791,3 +791,44 @@ duration (ms) and the actual function result as a vector with two elements."
         (recur next-guess))))
   (try' first-guess))
 (fixed-point (fn [x] (/ (log 1000) (log x))) 2.0)
+
+;; exercise 1.37 a)
+;; Q: an infinite continued fraction is an expression of the form
+;; (N1 / (D1 + (N2 / (D2 + (N3 / ...)))))
+;; possible approximation via truncating expansion after given number of terms,
+;; called k-term finite continued fraction.
+;; suppsed N_i and D_i are functions of the index i, write procedure (cont-frac n d k)
+;; to compute k-term finite continued fraction, and test against 1/φ being the result
+;; of the infinte continued fraction where N_i = D_i = 1.0 for all i.
+(defn cont-frac [n d k]
+  (defn cont-frac' [i]
+    (if (> i k)
+      0
+      (/ (n i)
+         (+ (d i) (cont-frac' (inc i))))))
+  (cont-frac' 1))
+
+(def k 99)
+(defn φ [k]
+  (/ 1 (cont-frac (fn [i] 1.0)
+                  (fn [i] 1.0)
+                  k)))
+;; A: 1.618033988749895
+
+;; ex 1.37 b)
+;; convert recursive procedure into iterative procedure (or the other way around, depending
+;; on what you did for 1.37 a)
+;; A: above implementation is recursive (ironically, this means that we can't use recur)
+;; TODO: iterative procedure; I don't have the slightest idea.
+
+;; ex 1.38: ε - 2 can be approximated with N_i = 1 and D_i = 1, 2, 1, 1, 4, 1, 1, 6, 1, 1, 8
+;; Q: write program that uses cont-frac to estimate ε
+(defn ε [k]
+  ;; (defn d [i]
+  ;;   (if (= (mod i 3) 2)
+  ;;     (* 2 (quot (inc i) 3))
+  ;;     1))
+  (cont-frac (fn [i] 1.0)
+             d
+             k))
+
