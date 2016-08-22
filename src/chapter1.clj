@@ -673,7 +673,7 @@ duration (ms) and the actual function result as a vector with two elements."
 ;; compute:
 ;; - sum of squares of prime numbers in interval a b
 ;; - product of all positive integers that are relatively prime to n
-;; A: 
+;; A:
 (defn filtered-accumulate [predicate combiner null-value term a next b]
   (defn acc-iter [acc a]
     (if (> a b)
@@ -717,12 +717,13 @@ duration (ms) and the actual function result as a vector with two elements."
 ;; Q: what happens if we evaluate (f f)? Explain!
 ;; A: (f f) --> (f 2) --> (2 2) --> java.lang.Long cannot be cast to clojure.lang.IFn
 
-;; half-interval method: finding roots of equations by successively halving a range
+;; half-interval method: finding roots of equations by successively halving a range.
 (defn avg [ & args] (/ (reduce + args) (count args)))
-(defn close-enough? [a b] (> 0.0001 (Math/abs (- a b))))
+(defn close-enough? [a b] (> 0.001 (Math/abs (- a b))))
 (defn negative? [a] (< a 0))
 (defn positive? [a] (> a 0))
 (defn sin [x] (Math/sin x))
+(defn cos [x] (Math/cos x))
 
 (defn search [f neg-point pos-point]
   (let [mid-point (avg neg-point pos-point)]
@@ -731,3 +732,44 @@ duration (ms) and the actual function result as a vector with two elements."
 	  (cond (negative? mid-value) (recur f mid-point pos-point)
 		(positive? mid-value) (recur f neg-point mid-point)
 		:else mid-point)))))
+
+(defn half-interval-method [f a b]
+  (let [a (double a) ;; if we don't provide double values, Math/abs can't be applied
+        b (double b)
+        a-value (f a)
+        b-value (f b)]
+    (cond (and (negative? a-value) (positive? b-value)) (search f a b)
+          (and (negative? b-value) (positive? a-value)) (search f b a)
+          :else (throw (new IllegalArgumentException
+                            (str "values are not of opposite sign" a b))))))
+
+(half-interval-method sin 2.0 4.0)
+(half-interval-method (fn [x] (- (* x x x) (* 2 x) 3))
+                      1.0 2.0)
+
+(def tolerance 0.00001)
+
+;; try is not a good choice, so procedure naming deviates from the book
+(defn fixed-point [f first-guess]
+  (defn close-enough? [v1 v2]
+    (> tolerance
+       (Math/abs (- v1 v2))))
+  (defn try' [guess]
+    (let [next-guess (f guess)]
+      (if (close-enough? guess next-guess)
+        next-guess
+        (recur next-guess))))
+  (try' first-guess))
+
+(fixed-point cos 1.0)
+(fixed-point (fn [y] (+ (sin y) (cos y))) 1.0)
+
+(fixed-point (fn [y] (avg (/ 2 y) y)) 1.0)
+(defn sqrt [x]
+  (fixed-point (fn [y] (avg (/ x y) y)) 1.0))
+
+;; exercise 1.35
+;; Q: show that phi (golden ratio) is
+;; A: φ^2 = φ + 1   | --> divide both sides by φ
+;;    φ = 1 + 1/φ
+(fixed-point (fn [x] (+ 1 (/ 1 x))) 1.0)
