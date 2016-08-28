@@ -808,7 +808,6 @@ duration (ms) and the actual function result as a vector with two elements."
          (+ (d i) (cont-frac' (inc i))))))
   (cont-frac' 1))
 
-(def k 99)
 (defn φ [k]
   (/ 1 (cont-frac (fn [i] 1.0)
                   (fn [i] 1.0)
@@ -819,16 +818,37 @@ duration (ms) and the actual function result as a vector with two elements."
 ;; convert recursive procedure into iterative procedure (or the other way around, depending
 ;; on what you did for 1.37 a)
 ;; A: above implementation is recursive (ironically, this means that we can't use recur)
-;; TODO: iterative procedure; I don't have the slightest idea.
+;; iterative procedure below works backwards, i.e. its intermediate results are
+;; for computing the continuos fraction starting with N_i, not N_i.
+(defn cont-frac-iter [n d k] (cont-frac n d k)
+  (defn internal [i prev]
+    (if (zero? i)
+      prev
+      (recur (dec i) (/ (n i) (- (d i) prev)))))
+  (internal k 0))
 
 ;; ex 1.38: ε - 2 can be approximated with N_i = 1 and D_i = 1, 2, 1, 1, 4, 1, 1, 6, 1, 1, 8
 ;; Q: write program that uses cont-frac to estimate ε
-(defn ε [k]
-  ;; (defn d [i]
-  ;;   (if (= (mod i 3) 2)
-  ;;     (* 2 (quot (inc i) 3))
-  ;;     1))
-  (cont-frac (fn [i] 1.0)
+;; A: note that we pass in cf as cont-frac function so we can test 1.37 b)
+(defn ε [cf k]
+  (defn d [i]
+    (if (= (mod i 3) 2)
+      (* 2 (quot (inc i) 3))
+      1))
+  (+ 2 (cf (fn [i] 1.0)
              d
-             k))
+             k)))
 
+(defn erec [k] (ε cont-frac k))
+(defn eiter [k] (ε cont-frac-iter k))
+
+(= (erec 100) (eiter 100))
+
+;; ex 1.39: J. H. Lambert published a continued fraction for tangent functions
+;; in 1770: tanx = (x / (1 - (x^2 / (3 - x^2) / (5 - ...)))).
+;; Q: define (tan-cf x k)
+;; A:
+(defn tan-cf [x k]
+  (defn n [i] (if (= 1 i) x (* x x)))
+  (defn d [i] (dec (* 2 i)))
+  (cont-frac-iter n d k))
