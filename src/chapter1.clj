@@ -824,7 +824,7 @@ duration (ms) and the actual function result as a vector with two elements."
   (defn internal [i prev]
     (if (zero? i)
       prev
-      (recur (dec i) (/ (n i) (- (d i) prev)))))
+      (recur (dec i) (/ (n i) (+ (d i) prev)))))
   (internal k 0))
 
 ;; ex 1.38: ε - 2 can be approximated with N_i = 1 and D_i = 1, 2, 1, 1, 4, 1, 1, 6, 1, 1, 8
@@ -849,6 +849,10 @@ duration (ms) and the actual function result as a vector with two elements."
 ;; Q: define (tan-cf x k)
 ;; A:
 (defn tan-cf [x k]
-  (defn n [i] (if (= 1 i) x (* x x)))
+  (defn n [i] (if (= 1 i) x (- (* x x))))
   (defn d [i] (dec (* 2 i)))
   (cont-frac-iter n d k))
+
+;; 1.3.4: Procedures as Returned Values
+(defn average-damp [f]
+  (avg x (f x)))
