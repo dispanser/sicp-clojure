@@ -784,7 +784,6 @@ duration (ms) and the actual function result as a vector with two elements."
     (> tolerance
        (Math/abs (- v1 v2))))
   (defn try' [guess]
-    (print "guess:" guess)
     (let [next-guess (f guess)]
       (if (close-enough? guess next-guess)
         next-guess
@@ -855,4 +854,140 @@ duration (ms) and the actual function result as a vector with two elements."
 
 ;; 1.3.4: Procedures as Returned Values
 (defn average-damp [f]
-  (avg x (f x)))
+  (fn [x] (avg x (f x))))
+
+(defn sqrt [x]
+  (fixed-point (average-damp (fn [y] (/ x y))) 1.0))
+
+(defn cube-root [x]
+  (fixed-point (average-damp (fn [y] (/ x (square y)))) 1.0))
+
+(def dx 0.00001)
+(defn deriv [g]
+  (fn [x] (/ (- (g (+ x dx)) (g x)) dx)))
+
+(defn cube [x] (* x x x))
+(def cube-deriv (deriv cube))
+
+(defn newton-transform [g]
+  (fn [x] (- x (/ (g x) ((deriv g) x)))))
+
+(defn newtons-method [g guess]
+  (fixed-point (newton-transform g) guess))
+
+(defn sqrt [x]
+  (newtons-method (fn [y] (- (square y) x)) 1.0))
+
+(defn fixed-point-of-transform [g transform guess]
+  (fixed-point (transform g) guess))
+
+(defn sqrt [x]
+  (fixed-point-of-transform (fn [y] (/ x y))
+                            average-damp
+                            1.0))
+
+(defn sqrt [x]
+  (fixed-point-of-transform (fn [y] (- (square y) x))
+                            newton-transform
+                            1.0))
+
+;; ex 1.40
+;; Q: define procedure cubic that can be used together with newton-method
+;;    procedure to in expressions of the form
+;;  (newtons-method (cubic a b c) 1) to approximate zeros of cubic
+;; A:
+(defn cubic [a b c]
+  (fn [x]
+    (+ (* x x x)
+       (* a x x)
+       (* b x)
+       c)))
+
+;; ex 1.41
+;; Q: define a procedure double that takes a procedure of one argument and
+;;    returns a procedure that applies the given procedure twice.
+;;    what's the result of (((double (double double) inc) 5)
+;; A: not we're renaming to double-apply because of existing double method.
+(defn double-apply [f]
+  (fn [x]
+    (f (f x))))
+(((double-apply (double-apply double-apply)) inc) 5)
+;; result is 21. (double double) yields a function that applies its argument 4 times,
+;; and (double (double double)) thus applies it 4x4 times, or 16xinc + 5 == 21.
+
+;; ex 1.42
+;; Q: define compose f g w/ that composes f and g as f(g(x))
+(defn compose [f g]
+  (fn [x] (f (g x))))
+
+;; should, and does, print 49: (square (inc 6)) --> (square 7) --> 49
+((compose square inc) 6)
+
+;; ex 1.43
+;; Q: taking the double procedure from 1.41 further, define a function repeat that
+;;    transforms its argument function into a function that is applied n times onto
+;;    itself, as in (repeated inc 7) is basically (+ 7), and ((repeated square 2) 5) is 625.
+;; Hint: try to use compose from previous exercise.
+(defn repeated [f n]
+  (cond (zero? n) identity
+        (= 1 n) f
+        (even? n) (let [f-half (repeated f (quot n 2))]
+                    (compose f-half f-half))
+        :else (compose f (repeated f (dec n)))))
+
+((repeated inc 13) 9)   ;; -> 22
+((repeated square 2) 5) ;; -> 625
+
+;; ex 1.44
+;; Q: create a smooth function transformer that creates for a given f and dx a function
+;;    that has a value at x of avg(f(x - dx), f(x), f(x + dx))
+;; A:
+(def dx 0.0001) ;; to allow for repeated application of smooth, dx can't be a param
+(defn smooth [f]
+  (fn [x] (avg (f (- x dx)) (f x) (f (+ x dx)))))
+
+(defn n-fold-smooth [f n]
+  ((repeated smooth n) f))
+
+((n-fold-smooth cube 13) 10) ;; -> 1000.0000025999999, seems ok (?)
+
+;; ex 1.45
+;; Q: we've seen that sqrt via fixed points for y -> x / y does not converge, and average damping
+;;    helps. This also works for cube roots (y -> x / y^2), but unfortunately not for quad roots
+;;    (y -> x / y ^ 3). For quad roots, a second average damping application is required.
+;;    Run some experiments to figure out the number of average-damp steps that are required to
+;;    compute the nth root (y -> x / y^(n-1)) via fixed-point method. Use this to implement a
+;;    simple procedure for nth roots using fixed point, average-damp and the repeated procedure
+;;    from above.
+;; A: average-damp twice allows for up to 7, excluding 8
+;;    three times: up to 15, excluding 16, but then again, works for 31 and even 32
+;;    It seems that the powers of two require an additional damping step, so we're guessing
+;;    that the floored value of log2(n) is a good idea.
+(defn nth-root [x n]
+  (defn log2 [y] (/ (Math/log y) (Math/log 2)))
+  (let [func (fn [y] (/ x (Math/pow y (dec n))))
+        num-dampings (int (log2 n))]
+    (fixed-point-of-transform func
+                              (repeated average-damp num-dampings)
+                              1.0)))
+(nth-root 16 2) ;; 4.000000000000051
+(nth-root 27 3) ;; 2.9999972...
+(nth-root 256 4)
+(nth-root 256 7) ;; 2
+(nth-root 256 8) ;; not 2, but 3
+(nth-root 256 15) ;; 3
+(nth-root 256 16) ;; not 3, but 4
+(nth-root 100000 31) ;; even 3, again
+(nth-root 256 32)    ;; even 3, but not 4, but 5...
+(nth-root 256 63)
+(nth-root 256 64)
+(nth-root 256 127)
+(nth-root 256 128)
+(defn nth-root-10000 [n]
+  (nth-root 10000 n))
+(map nth-root-10000 (range 2 100)) ;; try many different nth-roots for a single value...
+;; note to self: don't run nth-root for n == 1, because that doesn't work well with log2,
+;; because (log2 1) == 0 and (repeated f 0) is a miserable failure...
+;; thinking about it a little more, tweaked repeated to return the identify function when
+;; n is zero, because that's what applying something zero times means.
+(nth-root 1000 1) ;; -> 1000.0; victory!
