@@ -991,3 +991,41 @@ duration (ms) and the actual function result as a vector with two elements."
 ;; thinking about it a little more, tweaked repeated to return the identify function when
 ;; n is zero, because that's what applying something zero times means.
 (nth-root 1000 1) ;; -> 1000.0; victory!
+
+;; ex 1.46
+;; Q: general concept underlying the previous approximation procedures:
+;;    iterative improvement based on a 'termination check', i.e. good-enough?
+;;    and a way to improve the guess.
+;;    write iterative-improve that takes two procedures as arguments, and
+;;    implement both sqrt (section 1.1.7) and fixed-point (section 1.3.3)
+;;    using iterative-improve
+;; A: in contrast to scheme, we don't need to assign a name to be able to
+;;    call ourselves, because recur takes care of that, so we can use a lambda.
+(defn iterative-improve [good-enough? improve]
+  (fn [guess]
+    (if (good-enough? guess)
+      guess
+      (recur (improve guess)))))
+
+;; sqrt!
+(defn sqrt [x]
+  (let [good-enough? (fn [y] (> 0.0001 (Math/abs (- x (* y y)))))
+       improve (fn [y] (/ (+ y (/ x y )) 2))]
+    ((iterative-improve good-enough? improve) 1.0)))
+
+;; fixed-point: very straightforward, improve is just the function f itself,
+;; but close-enough? needs to recompute (f x) because it only accepts a single
+;; parameter instead of two (as in my initial implementation).
+(defn fixed-point [f first-guess]
+  (defn close-enough? [x]
+    (> tolerance
+       (Math/abs (- x (f x)))))
+  ((iterative-improve close-enough? f) first-guess))
+
+;; below repeating some tests from initial fixed-point definition to see if things
+;; work as they should -- and they do!
+(fixed-point cos 1.0)
+(fixed-point (fn [y] (+ (sin y) (cos y))) 1.0)
+(fixed-point (fn [y] (avg (/ 2 y) y)) 1.0)
+(defn sqrt [x]
+  (fixed-point (fn [y] (avg (/ x y) y)) 1.0))
